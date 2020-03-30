@@ -4,6 +4,8 @@ import soundfile
 import torch
 import numpy as np
 import librosa
+from shutil import copyfile
+import pdb
 
 def compute_loss(model, inputs, targets, criterion, compute_grad=False):
     '''
@@ -46,6 +48,47 @@ def compute_loss(model, inputs, targets, criterion, compute_grad=False):
         avg_loss = loss.item() / float(len(all_outputs))
 
     return all_outputs, avg_loss
+
+def split_data_into_folders(output_dataset_dir, train_dataset_dir, dev_dataset_dir, train_split_file,  dev_split_file):
+
+    train_output_dataset_dir = os.path.join(output_dataset_dir, 'train')
+    dev_output_dataset_dir = os.path.join(output_dataset_dir, 'dev')
+
+    train_output_dir_flag = os.path.exists(train_output_dataset_dir)
+    dev_output_dir_flag = os.path.exists(dev_output_dataset_dir)
+
+    os.makedirs(train_output_dataset_dir, exist_ok=True)
+    os.makedirs(dev_output_dataset_dir, exist_ok=True)
+
+    train_labels = {}
+    with open(train_split_file, 'r') as in_f:
+        lines = in_f.readlines()
+        for line in lines:
+            line = line.strip()
+            line_words = line.split(' ')
+            train_file = line_words[1]
+            train_labels[train_file] = line_words[-1]
+            src = os.path.join(train_dataset_dir, 'flac', train_file+'.flac') # try to remove hard-coding -- not super important
+            dst = os.path.join(train_output_dataset_dir, train_file+'.flac')
+            # TODO: change to moving files instead of copying if it takes too much space
+            if not train_output_dir_flag:
+                copyfile(src, dst)
+
+    dev_labels = {}
+    with open(dev_split_file, 'r') as in_f:
+        lines = in_f.readlines()
+        for line in lines:
+            line = line.strip()
+            line_words = line.split(' ')
+            dev_file = line_words[1]
+            dev_labels[dev_file] = line_words[-1]
+            src = os.path.join(dev_dataset_dir, 'flac', dev_file+'.flac') # try to remove hard-coding -- not super important
+            dst = os.path.join(dev_output_dataset_dir, dev_file+'.flac')
+            # TODO: change to moving files instead of copying if it takes too much space
+            if not dev_output_dir_flag:
+                copyfile(src, dst)
+
+    return train_labels, dev_labels
 
 def worker_init_fn(worker_id): # This is apparently needed to ensure workers have different random seeds and draw different examples!
     np.random.seed(np.random.get_state()[1][0] + worker_id)

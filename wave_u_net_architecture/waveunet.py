@@ -129,20 +129,30 @@ class Waveunet(nn.Module):
                 module.downsampling_blocks.append(
                     DownsamplingBlock(in_ch, num_channels[i], num_channels[i+1], kernel_size, strides, depth, conv_type, res))
 
-            for i in range(0, self.num_levels - 1):
-                module.upsampling_blocks.append(
-                    UpsamplingBlock(num_channels[-1-i], num_channels[-2-i], num_channels[-2-i], kernel_size, strides, depth, conv_type, res))
+            # for i in range(0, self.num_levels - 1):
+            #     module.upsampling_blocks.append(
+            #         UpsamplingBlock(num_channels[-1-i], num_channels[-2-i], num_channels[-2-i], kernel_size, strides, depth, conv_type, res))
 
             module.bottlenecks = nn.ModuleList(
                 [ConvLayer(num_channels[-1], num_channels[-1], kernel_size, 1, conv_type) for _ in range(depth)])
+
+            module.max_pool = nn.MaxPool1d(kernel_size = kernel_size,
+                                           stride = strides,
+                                           padding = kernel_size-1)
+
+            #TODO
+            # Need to somehow calculate the size of input here
+            # module.fc
 
             # Output conv
             outputs = num_outputs if separate else num_outputs * len(instruments)
             module.output_conv = nn.Conv1d(num_channels[0], outputs, 1)
 
+
             self.waveunets[instrument] = module
 
-        self.set_output_size(target_output_size)
+        #TODO: uncomment later -- for now giving error
+        # self.set_output_size(target_output_size)
 
     def set_output_size(self, target_output_size):
         self.target_output_size = target_output_size
@@ -206,13 +216,15 @@ class Waveunet(nn.Module):
             out = conv(out)
 
         # UPSAMPLING BLOCKS
-        for idx, block in enumerate(module.upsampling_blocks):
-            out = block(out, shortcuts[-1 - idx])
+        # for idx, block in enumerate(module.upsampling_blocks):
+        #     out = block(out, shortcuts[-1 - idx])
 
         # OUTPUT CONV
-        out = module.output_conv(out)
-        if not self.training:  # At test time clip predictions to valid amplitude range
-            out = out.clamp(min=-1.0, max=1.0)
+        #TODO: Figure out if we should run this
+        # out = module.output_conv(out)
+        #TODO: Figure out if we should run this
+        # if not self.training:  # At test time clip predictions to valid amplitude range
+        #     out = out.clamp(min=-1.0, max=1.0)
         return out
 
     def forward(self, x):

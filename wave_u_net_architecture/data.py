@@ -5,6 +5,8 @@ import numpy as np
 from sortedcontainers import SortedList
 from torch.utils.data import Dataset
 import glob
+import soundfile
+import pdb
 
 from tqdm import tqdm
 
@@ -143,6 +145,27 @@ def random_amplify(mix, targets, shapes, min, max):
             new_mix += targets[key]
     new_mix = np.clip(new_mix, -1.0, 1.0)
     return crop(new_mix, targets, shapes)
+
+class SpoofDataset(Dataset):
+    def __init__(self, data_dir, data_label_dict, max_seq_len, dataset_type):
+        data_dir = os.path.join(data_dir, dataset_type)
+        self.data = []
+        self.labels = []
+        for file in data_label_dict:
+            audio, audio_sr = soundfile.read(os.path.join(data_dir, file+'.flac'))
+            if len(audio) < max_seq_len:
+                audio = np.pad(audio, (0, max_seq_len-len(audio)), constant_values=0)
+            else:
+                audio = audio[:max_seq_len]
+            self.data.append(audio)
+            label = 1 if data_label_dict[file] == 'bonafide' else 0
+            self.labels.append(label)
+
+    def __getitem__(self, index):
+        return self.data[index], self.labels[index]
+
+    def __len__(self):
+        return len(self.labels)
 
 class SeparationDataset(Dataset):
     def __init__(self, dataset, partition, instruments, sr, channels, shapes, random_hops, hdf_dir, audio_transform=None, in_memory=False):

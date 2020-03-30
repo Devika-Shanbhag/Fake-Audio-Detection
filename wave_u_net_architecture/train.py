@@ -11,9 +11,11 @@ from torch.optim import Adam
 from tqdm import tqdm
 
 import utils
-from data import get_musdb_folds, SeparationDataset, random_amplify, crop
+from data import get_musdb_folds, SeparationDataset, random_amplify, crop, SpoofDataset
 from test import evaluate, validate
 from waveunet import Waveunet
+
+import pdb
 
 ## TRAIN PARAMETERS
 parser = argparse.ArgumentParser()
@@ -27,6 +29,18 @@ parser.add_argument('--log_dir', type=str, default='logs/waveunet',
                     help='Folder to write logs into')
 parser.add_argument('--dataset_dir', type=str, default="/mnt/windaten/Datasets/MUSDB18HQ",
                     help='Dataset path')
+parser.add_argument('--output_dataset_dir', type=str, default='',
+                    help='Output Dataset Path')
+parser.add_argument('--train_dataset_dir', type=str, default='',
+                    help='Path to folder containing train files')
+parser.add_argument('--dev_dataset_dir', type=str, default='',
+                    help='Path to folder containing dev files')
+parser.add_argument('--train_split_file', type=str, default='',
+                    help='Path to file containing train split')
+parser.add_argument('--dev_split_file', type=str, default='',
+                    help='Path to file containing dev split')
+parser.add_argument('--max_seq_len', type=str, default=196608,
+                    help='Path to file containing dev split')
 parser.add_argument('--hdf_dir', type=str, default="hdf",
                     help='Dataset path')
 parser.add_argument('--checkpoint_dir', type=str, default='checkpoints/waveunet',
@@ -96,17 +110,21 @@ print('parameter count: ', str(sum(p.numel() for p in model.parameters())))
 writer = SummaryWriter(args.log_dir)
 
 ### DATASET
-musdb = get_musdb_folds(args.dataset_dir)
+# musdb = get_musdb_folds(args.dataset_dir)
+train_label_dict, dev_label_dict = utils.split_data_into_folders(args.output_dataset_dir, args.train_dataset_dir, args.dev_dataset_dir, args.train_split_file, args.dev_split_file)
 # If not data augmentation, at least crop targets to fit model output shape
+#TODO: figure out if we want to do this
 crop_func = lambda mix,targets : crop(mix, targets, model.shapes)
 # Data augmentation function for training
-augment_func = lambda mix,targets : random_amplify(mix, targets, model.shapes, 0.7, 1.0)
-train_data = SeparationDataset(musdb, "train", INSTRUMENTS, args.sr, args.channels, model.shapes, True, args.hdf_dir, audio_transform=augment_func)
-val_data = SeparationDataset(musdb, "val", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
-test_data = SeparationDataset(musdb, "test", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
+# augment_func = lambda mix,targets : random_amplify(mix, targets, model.shapes, 0.7, 1.0)
+# train_data = SeparationDataset(musdb, "train", INSTRUMENTS, args.sr, args.channels, model.shapes, True, args.hdf_dir, audio_transform=augment_func)
+# val_data = SeparationDataset(musdb, "val", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
+# test_data = SeparationDataset(musdb, "test", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
 
-dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers, worker_init_fn=utils.worker_init_fn)
+train_data = SpoofDataset(args.output_dataset_dir, train_label_dict, args.max_seq_len, 'train')
+dev_data = SpoofDataset(args.output_dataset_dir, dev_label_dict, args.max_seq_len, 'dev')
 
+dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers) #, worker_init_fn=utils.worker_init_fn)
 ##### TRAINING ####
 
 # Set up the loss function
