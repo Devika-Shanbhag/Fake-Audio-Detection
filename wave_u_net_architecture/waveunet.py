@@ -215,6 +215,8 @@ class Waveunet(nn.Module):
         for conv in module.bottlenecks:
             out = conv(out)
 
+        out = module.max_pool(out)
+
         # UPSAMPLING BLOCKS
         # for idx, block in enumerate(module.upsampling_blocks):
         #     out = block(out, shortcuts[-1 - idx])
