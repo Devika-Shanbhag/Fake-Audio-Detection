@@ -73,7 +73,7 @@ parser.add_argument('--patience', type=int, default=20,
                     help="Patience for early stopping on validation set")
 parser.add_argument('--example_freq', type=int, default=200,
                     help="Write an audio summary into Tensorboard logs every X training iterations")
-parser.add_argument('--loss', type=str, default="L1",
+parser.add_argument('--loss', type=str, default="XEnt",
                     help="L1 or L2")
 parser.add_argument('--conv_type', type=str, default="gn",
                     help="Type of convolution (normal, BN-normalised, GN-normalised): normal/bn/gn")
@@ -128,10 +128,13 @@ dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
 ##### TRAINING ####
 
 # Set up the loss function
+cross_entropy_loss = torch.nn.CrossEntropyLoss()
 if args.loss == "L1":
     criterion = lambda x,y : torch.mean(torch.abs(x - y))
 elif args.loss == "L2":
     criterion = lambda x,y : torch.mean((x-y)**2)
+elif criterion == 'XEnt':
+    criterion = lambda x, y: cross_entropy_loss(x, y)
 else:
     raise NotImplementedError("Couldn't find this loss!")
 

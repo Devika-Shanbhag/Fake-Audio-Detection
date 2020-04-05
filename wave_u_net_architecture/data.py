@@ -5,6 +5,7 @@ import numpy as np
 from sortedcontainers import SortedList
 from torch.utils.data import Dataset
 import glob
+from removeZeros import *
 import soundfile
 import pdb
 
@@ -153,6 +154,7 @@ class SpoofDataset(Dataset):
         self.labels = []
         for file in data_label_dict:
             audio, audio_sr = soundfile.read(os.path.join(data_dir, file+'.flac'))
+            # audio, audio_sr = read_audio(os.path.join(data_dir, file+'.flac'), True, True)
             if len(audio) < max_seq_len:
                 audio = np.pad(audio, (0, max_seq_len-len(audio)), constant_values=0)
             else:
