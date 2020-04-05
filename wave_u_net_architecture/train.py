@@ -61,7 +61,7 @@ parser.add_argument('--depth', type=int, default=1,
                     help="Number of convs per block")
 parser.add_argument('--sr', type=int, default=44100,
                     help="Sampling rate")
-parser.add_argument('--channels', type=int, default=2,
+parser.add_argument('--channels', type=int, default=1,
                     help="Number of input audio channels")
 parser.add_argument('--kernel_size', type=int, default=5,
                     help="Filter width of kernels. Has to be an odd number")
@@ -95,9 +95,9 @@ NUM_INSTRUMENTS = len(INSTRUMENTS)
 num_features = [args.features*i for i in range(1, args.levels+1)] if args.feature_growth == "add" else \
                [args.features*2**i for i in range(0, args.levels)]
 target_outputs = int(args.output_size * args.sr)
-model = Waveunet(args.channels, num_features, args.channels, INSTRUMENTS, kernel_size=args.kernel_size,
+model = Waveunet(args.channels, num_features, args.channels, INSTRUMENTS, args.max_seq_len, kernel_size=args.kernel_size,
                  target_output_size=target_outputs, depth=args.depth, strides=args.strides,
-                 conv_type=args.conv_type, res=args.res, separate=args.separate)
+                 conv_type=args.conv_type, res=args.res, separate=False)
 
 if args.cuda:
     model = utils.DataParallel(model)
@@ -156,6 +156,7 @@ while state["worse_epochs"] < args.patience:
     model.train()
     with tqdm(total=len(train_data) // args.batch_size) as pbar:
         np.random.seed()
+        update_count = 0
         for example_num, (x, targets) in enumerate(dataloader):
             if args.cuda:
                 x = x.cuda()
@@ -165,7 +166,7 @@ while state["worse_epochs"] < args.patience:
             t = time.time()
 
             # Set LR for this iteration
-            utils.set_cyclic_lr(optimizer, example_num, len(train_data) // args.batch_size, args.cycles, args.min_lr, args.lr)
+            # utils.set_cyclic_lr(optimizer, example_num, len(train_data) // args.batch_size, args.cycles, args.min_lr, args.lr)
             writer.add_scalar("lr", utils.get_lr(optimizer), state["step"])
 
             # Compute loss for each instrument/model
@@ -173,6 +174,8 @@ while state["worse_epochs"] < args.patience:
             outputs, avg_loss = utils.compute_loss(model, x, targets, criterion, compute_grad=True)
 
             optimizer.step()
+            update_count += 1
+
 
             state["step"] += 1
 
@@ -190,6 +193,9 @@ while state["worse_epochs"] < args.patience:
                     writer.add_audio(inst + "_target", torch.mean(targets[inst][0], 0), state["step"], sample_rate=args.sr)
 
             pbar.update(1)
+
+            if update_count > 500:
+                break
 
     # VALIDATE
     val_loss = validate(args, model, criterion, val_data)

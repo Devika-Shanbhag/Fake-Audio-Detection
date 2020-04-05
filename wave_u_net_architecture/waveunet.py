@@ -1,5 +1,7 @@
 import torch
 import torch.nn as nn
+import numpy as np
+import pdb
 
 from waveunet_utils import crop, Resample1d, ConvLayer
 
@@ -98,7 +100,7 @@ class DownsamplingBlock(nn.Module):
         return curr_size
 
 class Waveunet(nn.Module):
-    def __init__(self, num_inputs, num_channels, num_outputs, instruments, kernel_size, target_output_size, conv_type, res, separate=False, depth=1, strides=2):
+    def __init__(self, num_inputs, num_channels, num_outputs, instruments, max_seq_len, kernel_size, target_output_size, conv_type, res, separate=False, depth=1, strides=2):
         super(Waveunet, self).__init__()
 
         self.num_levels = len(num_channels)
@@ -109,6 +111,7 @@ class Waveunet(nn.Module):
         self.depth = depth
         self.instruments = instruments
         self.separate = separate
+        self.fc_inp_size = max_seq_len
 
         # Only odd filter kernels allowed
         assert(kernel_size % 2 == 1)
@@ -129,20 +132,34 @@ class Waveunet(nn.Module):
                 module.downsampling_blocks.append(
                     DownsamplingBlock(in_ch, num_channels[i], num_channels[i+1], kernel_size, strides, depth, conv_type, res))
 
+                # 2*(depth-1) + 2 conv1d layers in 1 downsampling block + 1 optional conv1d layer (which won't be turned on but let's be consistent)
+                stride=1
+                padding = 0
+                for _ in range(2*depth):
+                    self.fc_inp_size = np.floor(((self.fc_inp_size+(2*padding)-kernel_size)*1.0)/stride) + 1
+                if res!='fixed':
+                    self.fc_inp_size = np.floor(((self.fc_inp_size+(2*padding)-kernel_size)*1.0)/strides) + 1
+                else:
+                    self.fc_inp_size = np.floor(((self.fc_inp_size+(2*padding)-15)*1.0)/strides) + 1
+
             # for i in range(0, self.num_levels - 1):
             #     module.upsampling_blocks.append(
             #         UpsamplingBlock(num_channels[-1-i], num_channels[-2-i], num_channels[-2-i], kernel_size, strides, depth, conv_type, res))
 
             module.bottlenecks = nn.ModuleList(
                 [ConvLayer(num_channels[-1], num_channels[-1], kernel_size, 1, conv_type) for _ in range(depth)])
+            for _ in range(depth):
+                self.fc_inp_size = np.floor(((self.fc_inp_size+(2*padding)-kernel_size)*1.0)/1) + 1
 
+            # figure out what stride and padding we want to actually use here
             module.max_pool = nn.MaxPool1d(kernel_size = kernel_size,
                                            stride = strides,
-                                           padding = kernel_size-1)
+                                           padding = 0)
+            self.fc_inp_size = np.floor(((self.fc_inp_size+(2*padding)-kernel_size)*1.0)/strides) + 1
 
             #TODO
             # Need to somehow calculate the size of input here
-            # module.fc
+            module.fc = nn.Linear(int(self.fc_inp_size), 1)
 
             # Output conv
             outputs = num_outputs if separate else num_outputs * len(instruments)
@@ -151,7 +168,7 @@ class Waveunet(nn.Module):
 
             self.waveunets[instrument] = module
 
-        #TODO: uncomment later -- for now giving error
+        #TODO: uncomment/remove later -- for now giving error
         # self.set_output_size(target_output_size)
 
     def set_output_size(self, target_output_size):
@@ -204,7 +221,7 @@ class Waveunet(nn.Module):
         :return: Source estimates
         '''
         shortcuts = []
-        out = x
+        out = x.unsqueeze(1)
 
         # DOWNSAMPLING BLOCKS
         for block in module.downsampling_blocks:
@@ -216,6 +233,8 @@ class Waveunet(nn.Module):
             out = conv(out)
 
         out = module.max_pool(out)
+        pdb.set_trace()
+        out = module.fc(out)
 
         # UPSAMPLING BLOCKS
         # for idx, block in enumerate(module.upsampling_blocks):
@@ -231,7 +250,8 @@ class Waveunet(nn.Module):
 
     def forward(self, x):
         curr_input_size = x.shape[-1]
-        assert(curr_input_size == self.input_size) # User promises to feed the proper input himself, to get the pre-calculated (NOT the originally desired) output size
+        #uncomment/remove later -- giving errors
+        # assert(curr_input_size == self.input_size) # User promises to feed the proper input himself, to get the pre-calculated (NOT the originally desired) output size
 
         if self.separate:
             for inst, module in self.waveunets.items():
