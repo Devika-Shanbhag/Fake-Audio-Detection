@@ -98,6 +98,8 @@ target_outputs = int(args.output_size * args.sr)
 model = Waveunet(args.channels, num_features, args.channels, INSTRUMENTS, args.max_seq_len, kernel_size=args.kernel_size,
                  target_output_size=target_outputs, depth=args.depth, strides=args.strides,
                  conv_type=args.conv_type, res=args.res, separate=False)
+#TODO : check if the problem is in the model or input
+model = model.double()
 
 if args.cuda:
     model = utils.DataParallel(model)

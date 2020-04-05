@@ -157,9 +157,11 @@ class Waveunet(nn.Module):
                                            padding = 0)
             self.fc_inp_size = np.floor(((self.fc_inp_size+(2*padding)-kernel_size)*1.0)/strides) + 1
 
-            #TODO
-            # Need to somehow calculate the size of input here
-            module.fc = nn.Linear(int(self.fc_inp_size), 1)
+            #correcting off by 1 error
+            self.fc_inp_size += 1
+
+            module.flatten = nn.Flatten()
+            module.fc = nn.Linear(int(self.fc_inp_size)*num_channels[-1], 1)
 
             # Output conv
             outputs = num_outputs if separate else num_outputs * len(instruments)
@@ -233,7 +235,7 @@ class Waveunet(nn.Module):
             out = conv(out)
 
         out = module.max_pool(out)
-        pdb.set_trace()
+        out = module.flatten(out)
         out = module.fc(out)
 
         # UPSAMPLING BLOCKS
