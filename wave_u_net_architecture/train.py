@@ -130,13 +130,13 @@ dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
 ##### TRAINING ####
 
 # Set up the loss function
-cross_entropy_loss = torch.nn.CrossEntropyLoss()
+cross_entropy_loss = torch.nn.BCEWithLogitsLoss()
 if args.loss == "L1":
-    criterion = lambda x,y : torch.mean(torch.abs(x - y))
+    criterion = lambda x,y : torch.mean(torch.abs(x.double() - y.double()))
 elif args.loss == "L2":
-    criterion = lambda x,y : torch.mean((x-y)**2)
+    criterion = lambda x,y : torch.mean((x.double()-y.double())**2)
 elif args.loss == 'XEnt':
-    criterion = lambda x, y: cross_entropy_loss(x, y)
+    criterion = lambda x, y: cross_entropy_loss(x.double(), y.double())
 else:
     raise NotImplementedError("Couldn't find this loss!")
 
@@ -155,6 +155,7 @@ if args.load_model is not None:
     state = utils.load_model(model, optimizer, args.load_model)
 
 print('TRAINING START')
+no_loss_counter = 0
 while state["worse_epochs"] < args.patience:
     print("Training one epoch from iteration " + str(state["step"]))
     avg_time = 0.
@@ -177,7 +178,6 @@ while state["worse_epochs"] < args.patience:
             # Compute loss for each instrument/model
             optimizer.zero_grad()
             outputs, avg_loss = utils.compute_loss(model, x, targets, criterion, compute_grad=True)
-
             optimizer.step()
             update_count += 1
 

@@ -38,9 +38,12 @@ def compute_loss(model, inputs, targets, criterion, compute_grad=False):
         avg_loss /= float(num_sources)
     else:
         loss = 0
-        for inst, output in model(inputs):
-            loss += criterion(output, targets[inst])
-            all_outputs[inst] = output.detach().clone()
+
+        for output in model(inputs):
+            output = output.reshape(targets.shape)
+            loss += criterion(output, targets)
+            all_outputs['all'] = output.detach().clone()
+
 
         if compute_grad:
             loss.backward()

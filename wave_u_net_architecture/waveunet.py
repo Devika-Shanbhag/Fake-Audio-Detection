@@ -262,5 +262,6 @@ class Waveunet(nn.Module):
             assert(len(self.waveunets) == 1)
             out = self.forward_module(x, self.waveunets["ALL"])
 
-            for idx, inst in enumerate(self.instruments):
-                yield inst, out[:, idx * self.num_outputs:(idx + 1) * self.num_outputs]
+            yield out
+            # for idx, inst in enumerate(self.instruments):
+            #     yield inst, out[:, idx * self.num_outputs:(idx + 1) * self.num_outputs]
