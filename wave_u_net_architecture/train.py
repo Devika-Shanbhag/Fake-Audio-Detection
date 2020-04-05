@@ -133,7 +133,7 @@ if args.loss == "L1":
     criterion = lambda x,y : torch.mean(torch.abs(x - y))
 elif args.loss == "L2":
     criterion = lambda x,y : torch.mean((x-y)**2)
-elif criterion == 'XEnt':
+elif args.loss == 'XEnt':
     criterion = lambda x, y: cross_entropy_loss(x, y)
 else:
     raise NotImplementedError("Couldn't find this loss!")
