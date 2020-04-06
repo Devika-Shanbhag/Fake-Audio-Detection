@@ -130,7 +130,7 @@ dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size,
 ##### TRAINING ####
 
 # Set up the loss function
-cross_entropy_loss = torch.nn.BCEWithLogitsLoss()
+cross_entropy_loss = torch.nn.BCELoss()
 if args.loss == "L1":
     criterion = lambda x,y : torch.mean(torch.abs(x.double() - y.double()))
 elif args.loss == "L2":
@@ -190,17 +190,17 @@ while state["worse_epochs"] < args.patience:
             writer.add_scalar("train_loss", avg_loss, state["step"])
 
             if example_num % args.example_freq == 0:
-                input_centre = torch.mean(x[0, :, model.shapes["output_start_frame"]:model.shapes["output_end_frame"]], 0) # Stereo not supported for logs yet
-                writer.add_audio("input", input_centre, state["step"], sample_rate=args.sr)
+                # input_centre = torch.mean(x[0, :, model.shapes["output_start_frame"]:model.shapes["output_end_frame"]], 0) # Stereo not supported for logs yet
+                # writer.add_audio("input", input_centre, state["step"], sample_rate=args.sr)
 
                 for inst in outputs.keys():
-                    writer.add_audio(inst + "_pred", torch.mean(outputs[inst][0], 0), state["step"], sample_rate=args.sr)
-                    writer.add_audio(inst + "_target", torch.mean(targets[inst][0], 0), state["step"], sample_rate=args.sr)
+                    writer.add_audio(inst + "_pred", outputs[inst], state["step"], sample_rate=args.sr)
+                    writer.add_audio(inst + "_target", targets.float(), state["step"], sample_rate=args.sr)
 
             pbar.update(1)
 
-            if update_count > 500:
-                break
+            # if update_count > 500:
+            #     break
 
     # VALIDATE
     val_loss = validate(args, model, criterion, val_data)

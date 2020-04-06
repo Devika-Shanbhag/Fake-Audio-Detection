@@ -162,6 +162,7 @@ class Waveunet(nn.Module):
 
             module.flatten = nn.Flatten()
             module.fc = nn.Linear(int(self.fc_inp_size)*num_channels[-1], 1)
+            module.sigmoid = nn.Sigmoid()
 
             # Output conv
             outputs = num_outputs if separate else num_outputs * len(instruments)
@@ -237,6 +238,7 @@ class Waveunet(nn.Module):
         out = module.max_pool(out)
         out = module.flatten(out)
         out = module.fc(out)
+        out = module.sigmoid(out)
 
         # UPSAMPLING BLOCKS
         # for idx, block in enumerate(module.upsampling_blocks):
