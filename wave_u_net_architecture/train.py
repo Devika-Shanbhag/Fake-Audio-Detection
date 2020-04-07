@@ -124,7 +124,7 @@ crop_func = lambda mix,targets : crop(mix, targets, model.shapes)
 # test_data = SeparationDataset(musdb, "test", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
 
 train_data = SpoofDataset(os.path.join(args.train_dataset_dir, 'flac'), train_label_dict, args.max_seq_len, 'train')
-dev_data = SpoofDataset(os.path.join(args.dev_dataset_dir, 'flac'), dev_label_dict, args.max_seq_len, 'dev')
+val_data = SpoofDataset(os.path.join(args.dev_dataset_dir, 'flac'), dev_label_dict, args.max_seq_len, 'dev')
 
 dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers) #, worker_init_fn=utils.worker_init_fn)
 ##### TRAINING ####
@@ -198,7 +198,6 @@ while state["worse_epochs"] < args.patience:
                     writer.add_audio(inst + "_target", targets.float(), state["step"], sample_rate=args.sr)
 
             pbar.update(1)
-
             # if update_count > 500:
             #     break
 
@@ -225,29 +224,29 @@ while state["worse_epochs"] < args.patience:
 
 #### TESTING ####
 # Test loss
-print("TESTING")
+# print("TESTING")
 
-# Load best model based on validation loss
-state = utils.load_model(model, None, state["best_checkpoint"])
-test_loss = validate(args, model, criterion, test_data)
-print("TEST FINISHED: LOSS: " + str(test_loss))
-writer.add_scalar("test_loss", test_loss, state["step"])
+# # Load best model based on validation loss
+# state = utils.load_model(model, None, state["best_checkpoint"])
+# test_loss = validate(args, model, criterion, test_data)
+# print("TEST FINISHED: LOSS: " + str(test_loss))
+# writer.add_scalar("test_loss", test_loss, state["step"])
 
-# Mir_eval metrics
-test_metrics = evaluate(args, musdb["test"], model, INSTRUMENTS)
+# # Mir_eval metrics
+# test_metrics = evaluate(args, musdb["test"], model, INSTRUMENTS)
 
-# Dump all metrics results into pickle file for later analysis if needed
-with open(os.path.join(args.checkpoint_dir, "results.pkl"), "wb") as f:
-    pickle.dump(test_metrics, f)
+# # Dump all metrics results into pickle file for later analysis if needed
+# with open(os.path.join(args.checkpoint_dir, "results.pkl"), "wb") as f:
+#     pickle.dump(test_metrics, f)
 
-# Write most important metrics into Tensorboard log
-avg_SDRs = {inst : np.mean([np.nanmean(song[inst]["SDR"]) for song in test_metrics]) for inst in INSTRUMENTS}
-avg_SIRs = {inst : np.mean([np.nanmean(song[inst]["SIR"]) for song in test_metrics]) for inst in INSTRUMENTS}
-for inst in INSTRUMENTS:
-    writer.add_scalar("test_SDR_" + inst, avg_SDRs[inst], state["step"])
-    writer.add_scalar("test_SIR_" + inst, avg_SIRs[inst], state["step"])
-overall_SDR = np.mean([v for v in avg_SDRs.values()])
-writer.add_scalar("test_SDR", overall_SDR)
-print("SDR: " + str(overall_SDR))
+# # Write most important metrics into Tensorboard log
+# avg_SDRs = {inst : np.mean([np.nanmean(song[inst]["SDR"]) for song in test_metrics]) for inst in INSTRUMENTS}
+# avg_SIRs = {inst : np.mean([np.nanmean(song[inst]["SIR"]) for song in test_metrics]) for inst in INSTRUMENTS}
+# for inst in INSTRUMENTS:
+#     writer.add_scalar("test_SDR_" + inst, avg_SDRs[inst], state["step"])
+#     writer.add_scalar("test_SIR_" + inst, avg_SIRs[inst], state["step"])
+# overall_SDR = np.mean([v for v in avg_SDRs.values()])
+# writer.add_scalar("test_SDR", overall_SDR)
+# print("SDR: " + str(overall_SDR))
 
 writer.close()
