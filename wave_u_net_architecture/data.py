@@ -7,6 +7,7 @@ from torch.utils.data import Dataset
 import glob
 from removeZeros import *
 import soundfile
+from collections import Counter
 import pdb
 
 from tqdm import tqdm
@@ -150,6 +151,9 @@ def random_amplify(mix, targets, shapes, min, max):
 class SpoofDataset(Dataset):
     def __init__(self, data_dir, data_label_dict, max_seq_len, dataset_type):
         # data_dir = os.path.join(data_dir, dataset_type)
+        label_counts = Counter(data_label_dict.values())
+        diff = label_counts['spoof'] - label_counts['bonafide']
+        diff_per_sample = int(np.ceil((diff*1.0)/label_counts['bonafide']))
         self.data = []
         self.labels = []
         for file in data_label_dict:
@@ -159,9 +163,13 @@ class SpoofDataset(Dataset):
                 audio = np.pad(audio, (0, max_seq_len-len(audio)), constant_values=0)
             else:
                 audio = audio[:max_seq_len]
-            self.data.append(audio)
             label = 1 if data_label_dict[file] == 'bonafide' else 0
+            self.data.append(audio)
             self.labels.append(label)
+            if label == 1:
+                for _ in range(diff_per_sample-1):
+                    self.data.append(audio)
+                    self.labels.append(label)
 
     def __getitem__(self, index):
         return self.data[index], self.labels[index]
