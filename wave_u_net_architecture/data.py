@@ -149,7 +149,7 @@ def random_amplify(mix, targets, shapes, min, max):
 
 class SpoofDataset(Dataset):
     def __init__(self, data_dir, data_label_dict, max_seq_len, dataset_type):
-        data_dir = os.path.join(data_dir, dataset_type)
+        # data_dir = os.path.join(data_dir, dataset_type)
         self.data = []
         self.labels = []
         for file in data_label_dict:

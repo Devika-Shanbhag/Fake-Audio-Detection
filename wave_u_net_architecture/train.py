@@ -123,8 +123,8 @@ crop_func = lambda mix,targets : crop(mix, targets, model.shapes)
 # val_data = SeparationDataset(musdb, "val", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
 # test_data = SeparationDataset(musdb, "test", INSTRUMENTS, args.sr, args.channels, model.shapes, False, args.hdf_dir, audio_transform=crop_func)
 
-train_data = SpoofDataset(args.output_dataset_dir, train_label_dict, args.max_seq_len, 'train')
-dev_data = SpoofDataset(args.output_dataset_dir, dev_label_dict, args.max_seq_len, 'dev')
+train_data = SpoofDataset(os.path.join(args.train_dataset_dir, 'flac'), train_label_dict, args.max_seq_len, 'train')
+dev_data = SpoofDataset(os.path.join(args.dev_dataset_dir, 'flac'), dev_label_dict, args.max_seq_len, 'dev')
 
 dataloader = torch.utils.data.DataLoader(train_data, batch_size=args.batch_size, shuffle=True, num_workers=args.num_workers) #, worker_init_fn=utils.worker_init_fn)
 ##### TRAINING ####

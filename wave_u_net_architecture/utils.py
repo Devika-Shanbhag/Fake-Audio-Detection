@@ -74,8 +74,8 @@ def split_data_into_folders(output_dataset_dir, train_dataset_dir, dev_dataset_d
             src = os.path.join(train_dataset_dir, 'flac', train_file+'.flac') # try to remove hard-coding -- not super important
             dst = os.path.join(train_output_dataset_dir, train_file+'.flac')
             # TODO: change to moving files instead of copying if it takes too much space
-            if not train_output_dir_flag:
-                copyfile(src, dst)
+            # if not train_output_dir_flag:
+            #     copyfile(src, dst)
 
     dev_labels = {}
     with open(dev_split_file, 'r') as in_f:
@@ -88,8 +88,8 @@ def split_data_into_folders(output_dataset_dir, train_dataset_dir, dev_dataset_d
             src = os.path.join(dev_dataset_dir, 'flac', dev_file+'.flac') # try to remove hard-coding -- not super important
             dst = os.path.join(dev_output_dataset_dir, dev_file+'.flac')
             # TODO: change to moving files instead of copying if it takes too much space
-            if not dev_output_dir_flag:
-                copyfile(src, dst)
+            # if not dev_output_dir_flag:
+            #     copyfile(src, dst)
 
     return train_labels, dev_labels
 
