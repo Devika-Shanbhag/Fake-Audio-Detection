@@ -5,6 +5,7 @@ import torch
 import numpy as np
 import librosa
 from shutil import copyfile
+from eval_metrics import *
 import pdb
 
 def compute_loss(model, inputs, targets, criterion, compute_grad=False):
@@ -38,19 +39,34 @@ def compute_loss(model, inputs, targets, criterion, compute_grad=False):
         avg_loss /= float(num_sources)
     else:
         loss = 0
-
+        eer = 0
+        accuracy = 0
         for output in model(inputs):
             output = output.reshape(targets.shape)
             loss += criterion(output, targets)
-            all_outputs['all'] = output.detach().clone()
+            target_scores = output[targets==1].detach().cpu().numpy()
+            non_target_scores = output[targets==0].detach().cpu().numpy()
+            if len(target_scores) != 0 and len(non_target_scores) != 0:
+                sample_eer, sample_threshold = compute_eer(target_scores, non_target_scores)
+            else:
+                sample_eer = 0
+                sample_threshold = 0.5
+            eer += sample_eer
+            predictions = output.clone()
+            predictions[output>=sample_threshold] = 1
+            predictions[output<sample_threshold] = 0
+            accuracy += torch.sum(predictions.double() == targets.double())/len(output)
 
+            all_outputs['all'] = output.detach().clone()
 
         if compute_grad:
             loss.backward()
 
         avg_loss = loss.item() / float(len(all_outputs))
+        avg_eer = eer/float(len(all_outputs))
+        avg_accuracy = accuracy.item()/float(len(all_outputs))
 
-    return all_outputs, avg_loss
+    return all_outputs, avg_loss, avg_eer, avg_accuracy
 
 def split_data_into_folders(output_dataset_dir, train_dataset_dir, dev_dataset_dir, train_split_file,  dev_split_file):
 

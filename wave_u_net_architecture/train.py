@@ -39,7 +39,7 @@ parser.add_argument('--train_split_file', type=str, default='',
                     help='Path to file containing train split')
 parser.add_argument('--dev_split_file', type=str, default='',
                     help='Path to file containing dev split')
-parser.add_argument('--max_seq_len', type=str, default=196608,
+parser.add_argument('--max_seq_len', type=int, default=196608,
                     help='Path to file containing dev split')
 parser.add_argument('--hdf_dir', type=str, default="hdf",
                     help='Dataset path')
@@ -166,8 +166,9 @@ while state["worse_epochs"] < args.patience:
         for example_num, (x, targets) in enumerate(dataloader):
             if args.cuda:
                 x = x.cuda()
-                for k in list(targets.keys()):
-                    targets[k] = targets[k].cuda()
+                targets = targets.cuda()
+                # for k in list(targets.keys()):
+                #     targets[k] = targets[k].cuda()
 
             t = time.time()
 
@@ -177,7 +178,7 @@ while state["worse_epochs"] < args.patience:
 
             # Compute loss for each instrument/model
             optimizer.zero_grad()
-            outputs, avg_loss = utils.compute_loss(model, x, targets, criterion, compute_grad=True)
+            outputs, avg_loss, avg_eer, avg_accuracy = utils.compute_loss(model, x, targets, criterion, compute_grad=True)
             optimizer.step()
             update_count += 1
 
@@ -188,23 +189,27 @@ while state["worse_epochs"] < args.patience:
             avg_time += (1. / float(example_num + 1)) * (t - avg_time)
 
             writer.add_scalar("train_loss", avg_loss, state["step"])
+            writer.add_scalar('train_eer', avg_eer, state['step'])
+            writer.add_scalar('train_accuracy', avg_accuracy, state['step'])
 
-            if example_num % args.example_freq == 0:
-                # input_centre = torch.mean(x[0, :, model.shapes["output_start_frame"]:model.shapes["output_end_frame"]], 0) # Stereo not supported for logs yet
-                # writer.add_audio("input", input_centre, state["step"], sample_rate=args.sr)
+            # if example_num % args.example_freq == 0:
+            #     # input_centre = torch.mean(x[0, :, model.shapes["output_start_frame"]:model.shapes["output_end_frame"]], 0) # Stereo not supported for logs yet
+            #     # writer.add_audio("input", input_centre, state["step"], sample_rate=args.sr)
 
-                for inst in outputs.keys():
-                    writer.add_audio(inst + "_pred", outputs[inst], state["step"], sample_rate=args.sr)
-                    writer.add_audio(inst + "_target", targets.float(), state["step"], sample_rate=args.sr)
+            #     for inst in outputs.keys():
+            #         writer.add_audio(inst + "_pred", outputs[inst], state["step"], sample_rate=args.sr)
+            #         writer.add_audio(inst + "_target", targets.float(), state["step"], sample_rate=args.sr)
 
             pbar.update(1)
             # if update_count > 500:
             #     break
 
     # VALIDATE
-    val_loss = validate(args, model, criterion, val_data)
-    print("VALIDATION FINISHED: LOSS: " + str(val_loss))
+    val_loss, val_eer, val_accuracy = validate(args, model, criterion, val_data)
+    print("VALIDATION FINISHED: LOSS: {}, EER: {}, Accuracy: {}".format(val_loss, val_eer, val_accuracy))
     writer.add_scalar("val_loss", val_loss, state["step"])
+    writer.add_scalar("val_eer", val_eer, state["step"])
+    writer.add_scalar("val_accuracy", val_accuracy, state["step"])
 
     # EARLY STOPPING CHECK
     checkpoint_path = os.path.join(args.checkpoint_dir, "checkpoint_" + str(state["step"]))
@@ -224,13 +229,15 @@ while state["worse_epochs"] < args.patience:
 
 #### TESTING ####
 # Test loss
-# print("TESTING")
+print("TESTING")
 
-# # Load best model based on validation loss
-# state = utils.load_model(model, None, state["best_checkpoint"])
-# test_loss = validate(args, model, criterion, test_data)
-# print("TEST FINISHED: LOSS: " + str(test_loss))
-# writer.add_scalar("test_loss", test_loss, state["step"])
+# Load best model based on validation loss
+state = utils.load_model(model, None, state["best_checkpoint"])
+test_loss, test_eer, test_accuracy = validate(args, model, criterion, val_data)
+print("TEST FINISHED: LOSS: {}, EER: {}, Accuracy: {}".format(test_loss, test_eer, test_accuracy))
+writer.add_scalar("test_loss", test_loss, state["step"])
+writer.add_scalar("test_eer", test_eer, state["step"])
+writer.add_scalar("test_accuracy", test_accuracy, state["step"])
 
 # # Mir_eval metrics
 # test_metrics = evaluate(args, musdb["test"], model, INSTRUMENTS)

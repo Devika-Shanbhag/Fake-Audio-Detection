@@ -139,18 +139,23 @@ def validate(args, model, criterion, test_data):
     # VALIDATE
     model.eval()
     total_loss = 0.
+    total_eer = 0.
+    total_accuracy = 0.
     with tqdm(total=len(test_data) // args.batch_size) as pbar, torch.no_grad():
         for example_num, (x, targets) in enumerate(dataloader):
             if args.cuda:
                 x = x.cuda()
-                for k in list(targets.keys()):
-                    targets[k] = targets[k].cuda()
+                targets = targets.cuda()
+                # for k in list(targets.keys()):
+                #     targets[k] = targets[k].cuda()
 
-            _, avg_loss = compute_loss(model, x, targets, criterion)
+            _, avg_loss, avg_eer, avg_accuracy = compute_loss(model, x, targets, criterion)
 
             total_loss += (1. / float(example_num + 1)) * (avg_loss - total_loss)
+            total_eer += (1. / float(example_num + 1)) * (avg_eer - total_eer)
+            total_accuracy += (1. / float(example_num + 1)) * (avg_accuracy - total_accuracy)
 
-            pbar.set_description("Current loss: " + str(total_loss))
+            pbar.set_description("Current loss: {}, eer: {}, accuracy: {}".format(total_loss, total_eer, total_accuracy))
             pbar.update(1)
 
-    return total_loss
+    return total_loss, total_eer, total_accuracy
