@@ -68,6 +68,14 @@ def compute_loss(model, inputs, targets, criterion, compute_grad=False):
 
     return all_outputs, avg_loss, avg_eer, avg_accuracy
 
+def compute_eer_total(all_predictions, all_targets):
+    all_predictions = np.array(all_predictions)
+    all_targets = np.array(all_targets)
+    target_scores = all_predictions[all_targets==1]
+    non_target_scores = all_predictions[all_targets==0]
+    eer, threshold = compute_eer(target_scores, non_target_scores)
+    return eer
+
 def split_data_into_folders(output_dataset_dir, train_dataset_dir, dev_dataset_dir, train_split_file,  dev_split_file):
 
     train_output_dataset_dir = os.path.join(output_dataset_dir, 'train')

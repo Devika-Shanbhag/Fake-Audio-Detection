@@ -163,6 +163,8 @@ while state["worse_epochs"] < args.patience:
     with tqdm(total=len(train_data) // args.batch_size) as pbar:
         np.random.seed()
         update_count = 0
+        all_predictions = []
+        all_targets = []
         for example_num, (x, targets) in enumerate(dataloader):
             if args.cuda:
                 x = x.cuda()
@@ -179,6 +181,8 @@ while state["worse_epochs"] < args.patience:
             # Compute loss for each instrument/model
             optimizer.zero_grad()
             outputs, avg_loss, avg_eer, avg_accuracy = utils.compute_loss(model, x, targets, criterion, compute_grad=True)
+            all_predictions.extend([o.item() for o in outputs['all']])
+            all_targets.extend([t.item() for t in targets])
             optimizer.step()
             update_count += 1
 
@@ -189,7 +193,6 @@ while state["worse_epochs"] < args.patience:
             avg_time += (1. / float(example_num + 1)) * (t - avg_time)
 
             writer.add_scalar("train_loss", avg_loss, state["step"])
-            writer.add_scalar('train_eer', avg_eer, state['step'])
             writer.add_scalar('train_accuracy', avg_accuracy, state['step'])
 
             # if example_num % args.example_freq == 0:
@@ -203,6 +206,9 @@ while state["worse_epochs"] < args.patience:
             pbar.update(1)
             # if update_count > 500:
             #     break
+
+        train_epoch_eer = utils.compute_eer_total(all_predictions, all_targets)
+        writer.add_scalar('train_eer', train_epoch_eer, state['step'])
 
     # VALIDATE
     val_loss, val_eer, val_accuracy = validate(args, model, criterion, val_data)
