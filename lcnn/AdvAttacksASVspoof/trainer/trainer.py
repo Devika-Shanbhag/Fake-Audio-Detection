@@ -3,6 +3,8 @@ import torch
 # from torchvision.utils import make_grid
 from .base_trainer import BaseTrainer
 from tqdm import tqdm
+import pdb
+from matplotlib import pyplot as plt
 
 class Trainer(BaseTrainer):
     """
@@ -48,11 +50,16 @@ class Trainer(BaseTrainer):
 
         total_loss = 0
         total_metrics = np.zeros(len(self.metrics))
-        for batch_idx, (_, data, target) in enumerate(self.data_loader):
+        predictions = []
+        targets = []
+        for batch_idx, (_, data, target) in enumerate(tqdm(self.data_loader)):
             data, target = data.to(self.device), target.to(self.device)
 
             self.optimizer.zero_grad()
+            #pdb.set_trace()
             output = self.model(data)
+            predictions.extend(output[0].detach().cpu().numpy())
+            targets.extend(target)
             loss = self.loss(output, target)
             loss.backward()
             self.optimizer.step()
@@ -70,7 +77,7 @@ class Trainer(BaseTrainer):
                     100.0 * batch_idx / len(self.data_loader),
                     loss.item()))
                 # self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
-
+        #pdb.set_trace()
         log = {
             'loss': total_loss / len(self.data_loader),
             'metrics': (total_metrics / len(self.data_loader)).tolist()
@@ -97,11 +104,15 @@ class Trainer(BaseTrainer):
         self.model.eval()
         total_val_loss = 0
         total_val_metrics = np.zeros(len(self.metrics))
+        predictions = []
+        targets = []
         with torch.no_grad():
             for batch_idx, (_, data, target) in enumerate(tqdm(self.valid_data_loader)):
                 data, target = data.to(self.device), target.to(self.device)
 
                 output = self.model(data)
+                predictions.extend(output[0].detach().cpu().numpy())
+                targets.extend(target)
                 loss = self.loss(output, target)
 
                 self.writer.set_step((epoch - 1) * len(self.valid_data_loader) + batch_idx, 'valid')
@@ -110,6 +121,7 @@ class Trainer(BaseTrainer):
                 total_val_metrics += self._eval_metrics(output[0], target)   # 0=cos_theta 1=phi_theta
                 # self.writer.add_image('input', make_grid(data.cpu(), nrow=8, normalize=True))
 
+        #pdb.set_trace()
         # add histogram of model parameters to the tensorboard
         for name, p in self.model.named_parameters():
             self.writer.add_histogram(name, p, bins='auto')

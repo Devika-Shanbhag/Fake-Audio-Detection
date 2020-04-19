@@ -5,6 +5,7 @@ from torch.utils import data
 # from torchvision import datasets, transforms
 from .base_data_loader import BaseDataLoader
 import sys
+import pdb
 
 MIN_N_FRAMES = 600
 
@@ -30,9 +31,12 @@ def get_unified_feature(mat, eval=False):
 
 class SpoofDataSet(data.Dataset):
     def __init__(self, scp_file, data_dir):
+        sampled_files = os.listdir(data_dir)
+        sampled_files = [ele[:-4] for ele in sampled_files]
         with open(scp_file, 'r') as f:
             # self._metadata = [line.strip().split(' ') for line in f if line.find(match_str)>=0]
-            self._metadata = [line.strip().split(' ') for line in f]
+            # self._metadata = [line.strip().split(' ') for line in f]
+            self._metadata = [line.strip().split(' ') for line in f if line.strip().split(' ')[1] in sampled_files]
         self.n_samples = len(self._metadata)
         self.data_dir = data_dir
         self.label_map ={"bonafide": 1,
@@ -43,9 +47,13 @@ class SpoofDataSet(data.Dataset):
 
     def __getitem__(self, idx):
         line = self._metadata[idx]
-        utt_id = line[0]
-        X = np.expand_dims(np.load(os.path.join(self.data_dir, f"{utt_id}.npy")), axis=0)   # [1, N, D]
-        y = self.label_map[line[1]]   # target
+        utt_id = line[1]
+        # X = np.expand_dims(np.squeeze(np.load(os.path.join(self.data_dir, f"{utt_id}.npy"))), axis=0)   # [1, N, D]
+        feat = np.load(os.path.join(self.data_dir, f"{utt_id}.npy")).astype(np.float32)
+        feat = np.squeeze(feat)
+        feat = get_unified_feature(feat, eval=True)
+        X = np.expand_dims(feat, axis=0)   # [1, N, D]
+        y = self.label_map[line[-1]]   # target
         return utt_id, X, y
 
 
@@ -62,6 +70,7 @@ class SpoofDataSetBalance(data.Dataset):
         with open(scp_file, 'r') as f:
             # self._metadata = [line.strip().split(' ') for line in f if line.find(match_str)>=0]
             self._metadata = [line.strip().split(' ') for line in f]
+
         self._metadata_bonafide = [i for i in self._metadata if 'bonafide' in i]
         self._metadata_spoof = [i for i in self._metadata if 'spoof' in i]
         self.n_samples = len(self._metadata)
@@ -88,22 +97,24 @@ class SpoofDataSetBalance(data.Dataset):
         # utt_id = line[0]
         # feat = np.load(np.load(os.path.join(self.data_dir, f"{utt_id}.npy")))
         # feat = get_unified_feature(feat)
-        X = np.expand_dims(np.load(os.path.join(self.data_dir, f"{utt_id}.npy")), axis=0)   # [1, N, D]
+        X = np.expand_dims(np.squeeze(np.load(os.path.join(self.data_dir, f"{utt_id}.npy"))), axis=0)   # [1, N, D]
         y = self.label_map[line[1]]   # target
         return utt_id, X, y
 
 class SpoofDataSetBalanceSample(data.Dataset):
     def __init__(self, scp_file, data_dir, eval, read_protocol, protocol_file):
         self.eval = eval  # set this True during evaluation.
-        self.read_protocol = read_protocol  # set this True if read wav from cm_protocol file directly 
+        self.read_protocol = False #read_protocol  # set this True if read wav from cm_protocol file directly 
+        sampled_files = os.listdir(data_dir)
+        sampled_files = [ele[:-4] for ele in sampled_files]
         if not read_protocol:
             with open(scp_file, 'r') as f:
                 # self._metadata = [line.strip().split(' ') for line in f if line.find(match_str)>=0]
-                self._metadata = [line.strip().split(' ') for line in f]
+                self._metadata = [line.strip().split(' ') for line in f if line.strip().split(' ')[1] in sampled_files]
         else:
             with open(protocol_file, 'r') as f:
                 # self._metadata = [line.strip().split(' ') for line in f if line.find(match_str)>=0]
-                self._metadata = [line.strip().split(' ') for line in f]
+                self._metadata = [line.strip().split(' ') for line in f if line.strip().split(' ')[1] in sampled_files]
 
         self._metadata_bonafide = [i for i in self._metadata if 'bonafide' in i]
         self._metadata_spoof = [i for i in self._metadata if 'spoof' in i]
@@ -132,8 +143,8 @@ class SpoofDataSetBalanceSample(data.Dataset):
             line = self._metadata[idx]
 
         if not self.read_protocol:
-            utt_id = line[0]
-            y = self.label_map[line[1]]   # target
+            utt_id = line[1]
+            y = self.label_map[line[-1]]   # target
         else:
             utt_id = line[1]
             y = self.label_map[line[-1]]

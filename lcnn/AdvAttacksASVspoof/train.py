@@ -9,6 +9,7 @@ import model.metric as module_metric
 import model as module_arch
 from parse_config import ConfigParser
 from trainer import Trainer
+import pdb
 
 torch.manual_seed(2019)  #cpu
 torch.cuda.manual_seed(2019) #gpu

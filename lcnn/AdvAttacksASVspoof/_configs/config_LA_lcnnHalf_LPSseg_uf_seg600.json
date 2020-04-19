@@ -11,10 +11,10 @@
         }
     },
     "train_data_loader": {
-        "type": "SpoofDataLoaderBalanceSample",
+        "type": "SpoofDataLoader",
         "args":{
-            "scp_file": "data_LA/trn_dev_eval_scps/ASVspoof2019_LA_LPS_uf_seg600_train.scp",
-            "data_dir": "data_LA/LPS_863",
+            "scp_file": "/content/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train_split.trn.txt",
+            "data_dir": "/content/data_LA/LPS_863",
             "batch_size": 16,
             "shuffle": true,
             "validation_split": 0.0,
@@ -22,10 +22,10 @@
         }
     },
     "dev_data_loader": {
-        "type": "SpoofDataLoaderBalanceSample",
+        "type": "SpoofDataLoader",
         "args":{
-            "scp_file": "data_LA/trn_dev_eval_scps/ASVspoof2019_LA_LPS_uf_seg600_dev.scp",
-            "data_dir": "data_LA/LPS_863",
+            "scp_file": "/content/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev_split_earlystop.trl.txt",
+            "data_dir": "/content/data_LA/LPS_863",
             "batch_size": 16,
             "shuffle": true,
             "validation_split": 0.0,
