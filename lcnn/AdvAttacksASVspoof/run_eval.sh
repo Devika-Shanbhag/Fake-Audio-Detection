@@ -1,11 +1,11 @@
 
-GPU=2
+GPU=0
 
 
-python eval3.py    --resume _saved/models/LA_SENet12_LPSseg_uf_seg600/20190628_185040/checkpoint-epoch7.pth \
-                  --protocol_file data_LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt \
-                  --asv_score_file data_LA/ASVspoof2019_LA_asv_scores/ASVspoof2019.LA.asv.eval.gi.trl.scores.txt \
-                  --device ${GPU}
+#python eval3.py    --resume _saved/models/LA_SENet12_LPSseg_uf_seg600/20190628_185040/checkpoint-epoch7.pth \
+#                  --protocol_file data_LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt \
+#                  --asv_score_file data_LA/ASVspoof2019_LA_asv_scores/ASVspoof2019.LA.asv.eval.gi.trl.scores.txt \
+#                  --device ${GPU}
 
 # python eval3.py    --resume _saved/models/LA_lcnnHalf_LPSseg_uf_seg600/20190624_145447/model_best.pth \
 #                   --protocol_file data_LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt \
@@ -23,10 +23,9 @@ python eval3.py    --resume _saved/models/LA_SENet12_LPSseg_uf_seg600/20190628_1
 #                   --asv_score_file data/ASVspoof2019_PA_dev_asv_scores_v1.txt \
 #                   --device ${GPU}
 
-# python eval.py    --resume _saved/models/LA_lcnnSmall_LPSseg_uf_seg600_noEmph/20190618_191154/model_best.pth \
-#                   --protocol_file data_LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.eval.trl.txt \
-#                   --asv_score_file data_LA/ASVspoof2019_LA_asv_scores/ASVspoof2019.LA.asv.eval.gi.trl.scores.txt \
-#                   --device ${GPU}
+python eval.py    --resume /home/dlcmu09/Fake-Audio-Detection/lcnn/AdvAttacksASVspoof/_saved/models/LA_lcnnHalf_LPSseg_uf_seg600/20200502_030052/model_best.pth\
+                   --protocol_file /home/dlcmu09/Fake-Audio-Detection/LA_splits/ASVspoof2019.LA.cm.dev_split_LR.trl.txt \
+                   --device ${GPU}
 
 
 # python eval.py    --resume _saved/models/LA_lcnnSmall_LPSseg_uf_seg600_noEmph/20190618_191154/checkpoint-epoch2.pth \

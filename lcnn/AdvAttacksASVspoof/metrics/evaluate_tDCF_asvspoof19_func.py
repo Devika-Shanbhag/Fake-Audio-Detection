@@ -24,10 +24,10 @@ def evaluate_tdcf_eer(cm_score_file, asv_score_file, print_cost=False):
     }
 
     # Load organizers' ASV scores
-    asv_data = np.genfromtxt(asv_score_file, dtype=str)
-    asv_sources = asv_data[:, 0]
-    asv_keys = asv_data[:, 1]
-    asv_scores = asv_data[:, 2].astype(np.float)
+    #asv_data = np.genfromtxt(asv_score_file, dtype=str)
+    #asv_sources = asv_data[:, 0]
+    #asv_keys = asv_data[:, 1]
+    #asv_scores = asv_data[:, 2].astype(np.float)
 
     # Load CM scores
     cm_data = np.genfromtxt(cm_score_file, dtype=str)
@@ -37,42 +37,42 @@ def evaluate_tdcf_eer(cm_score_file, asv_score_file, print_cost=False):
     cm_scores = cm_data[:, 3].astype(np.float)
 
     # Extract target, nontarget, and spoof scores from the ASV scores
-    tar_asv = asv_scores[asv_keys == 'target']
-    non_asv = asv_scores[asv_keys == 'nontarget']
-    spoof_asv = asv_scores[asv_keys == 'spoof']
+    #tar_asv = asv_scores[asv_keys == 'target']
+    #non_asv = asv_scores[asv_keys == 'nontarget']
+    #spoof_asv = asv_scores[asv_keys == 'spoof']
 
     # Extract bona fide (real human) and spoof scores from the CM scores
     bona_cm = cm_scores[cm_keys == 'bonafide']
     spoof_cm = cm_scores[cm_keys == 'spoof']
 
     # EERs of the standalone systems and fix ASV operating point to EER threshold
-    eer_asv, asv_threshold = em.compute_eer(tar_asv, non_asv)
+    #eer_asv, asv_threshold = em.compute_eer(tar_asv, non_asv)
     eer_cm = em.compute_eer(bona_cm, spoof_cm)[0]
 
 
-    [Pfa_asv, Pmiss_asv, Pmiss_spoof_asv] = em.obtain_asv_error_rates(tar_asv, non_asv, spoof_asv, asv_threshold)
+    #[Pfa_asv, Pmiss_asv, Pmiss_spoof_asv] = em.obtain_asv_error_rates(tar_asv, non_asv, spoof_asv, asv_threshold)
 
 
     # Compute t-DCF
-    tDCF_curve, CM_thresholds = em.compute_tDCF(bona_cm, spoof_cm, Pfa_asv, Pmiss_asv, Pmiss_spoof_asv, cost_model, print_cost)
+    #tDCF_curve, CM_thresholds = em.compute_tDCF(bona_cm, spoof_cm, Pfa_asv, Pmiss_asv, Pmiss_spoof_asv, cost_model, print_cost)
 
     # Minimum t-DCF
-    min_tDCF_index = np.argmin(tDCF_curve)
-    min_tDCF = tDCF_curve[min_tDCF_index]
+    #min_tDCF_index = np.argmin(tDCF_curve)
+    #min_tDCF = tDCF_curve[min_tDCF_index]
 
     if print_cost:
-        print('ASV SYSTEM')
-        print('   EER            = {:8.5f} % (Equal error rate (target vs. nontarget discrimination)'.format(eer_asv * 100))
-        print('   Pfa            = {:8.5f} % (False acceptance rate of nontargets)'.format(Pfa_asv * 100))
-        print('   Pmiss          = {:8.5f} % (False rejection rate of targets)'.format(Pmiss_asv * 100))
-        print('   1-Pmiss,spoof  = {:8.5f} % (Spoof false acceptance rate)'.format((1 - Pmiss_spoof_asv) * 100))
+        #print('ASV SYSTEM')
+        #print('   EER            = {:8.5f} % (Equal error rate (target vs. nontarget discrimination)'.format(eer_asv * 100))
+        #print('   Pfa            = {:8.5f} % (False acceptance rate of nontargets)'.format(Pfa_asv * 100))
+        #print('   Pmiss          = {:8.5f} % (False rejection rate of targets)'.format(Pmiss_asv * 100))
+        #print('   1-Pmiss,spoof  = {:8.5f} % (Spoof false acceptance rate)'.format((1 - Pmiss_spoof_asv) * 100))
 
         print('\nCM SYSTEM')
         print('   EER            = {:8.8f} % (Equal error rate for countermeasure)'.format(eer_cm * 100))
 
-        print('\nTANDEM')
-        print('   min-tDCF       = {:8.8f}'.format(min_tDCF))
-
+        #print('\nTANDEM')
+        #print('   min-tDCF       = {:8.8f}'.format(min_tDCF))
+    min_tDCF=0
     return min_tDCF, eer_cm*100
 
 

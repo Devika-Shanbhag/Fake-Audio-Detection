@@ -5,19 +5,19 @@ echo 'Current Dir: '${RootDir}
 extractLPS=1
 if [ $extractLPS -eq 1 ]; then
     echo 'Extracting Log Power Spectrograms ...'
-    python /content/AdvAttacksASVspoof/preprocess/compute_LPS.py --in_dir . \
+    python preprocess/compute_LPS.py --in_dir /home/dlcmu09/Fake-Audio-Detection/ \
                                        --out_dir ./data_LA/LPS_863 \
                                        --access_type LA \
-                                       --param_json_path /content/AdvAttacksASVspoof/preprocess/conf/stft_T45.json
+                                       --param_json_path preprocess/conf/stft_T45.json
 fi
 
 
 extractLMS=0
 if [ $extractLMS -eq 1 ]; then
     echo 'Extracting Log Magnitude Spectrograms ...'
-    python /content/AdvAttacksASVspoof/preprocess/compute_LMS.py --in_dir /scratch/sxliu/projects/asvspoof/ASVspoof2019-data/ \
+    python preprocess/compute_LMS.py --in_dir /scratch/sxliu/projects/asvspoof/ASVspoof2019-data/ \
                                        --out_dir ./data/LMS \
                                        --access_type PA \
-                                       --param_json_path /content/AdvAttacksASVspoof/preprocess/conf/stft.json
+                                       --param_json_path preprocess/conf/stft.json
 fi
 

@@ -24,10 +24,10 @@ import pdb
 def build_from_path(wavlist, out_dir, stft_conf, num_workers=1, mode='train'):
     executor = ProcessPoolExecutor(max_workers=num_workers)
     futures = []
-    if mode=='train':
-        wavlist = wavlist[:5000] + wavlist[-5000:]
-    else:
-        wavlist = wavlist[:1000] + wavlist[-1000:]
+    #if mode=='train':
+    #    wavlist = wavlist[:5000] + wavlist[-5000:]
+    #else:
+    #    wavlist = wavlist[:1000] + wavlist[-1000:]
     for wav_path in wavlist:
         utt_idx = os.path.basename(wav_path).rstrip('.flac')
         futures.append(executor.submit(
@@ -91,13 +91,14 @@ if __name__ == "__main__":
     wavfile_list_dev = glob.glob(os.path.join(wavfile_dir_dev, "*.flac"))
     wavfile_list_eval = glob.glob(os.path.join(wavfile_dir_eval, "*.flac"))
     #TODO: change to generic
-    train_label_file = '/content/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.train_split.trn.txt'
+    
+    train_label_file = '/home/dlcmu09/Fake-Audio-Detection/LA_splits/ASVspoof2019.LA.cm.train_split.trn.txt'
     wavfile_list_train, wavfile_train_labels = read_label_file(train_label_file)
-    dev_label_file = '/content/LA/ASVspoof2019_LA_cm_protocols/ASVspoof2019.LA.cm.dev_split_earlystop.trl.txt'
+    dev_label_file = '/home/dlcmu09/Fake-Audio-Detection/LA_splits/ASVspoof2019.LA.cm.dev_split_earlystop.trl.txt'
     wavfile_list_dev, wavfile_dev_labels = read_label_file(dev_label_file, 'dev')
     #pdb.set_trace()
-    print(wavfile_list_train)
-    print(wavfile_list_dev)
+    print(len(wavfile_list_train))
+    print(len(wavfile_list_dev))
 
     # extract LPS for training set 
     with codecs.open(args.param_json_path, 'r', encoding='utf-8') as f:

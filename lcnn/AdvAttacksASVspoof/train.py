@@ -17,6 +17,15 @@ np.random.seed(2019) #numpy
 # random.seed(1234) #random and transforms
 
 
+import warnings
+warnings.filterwarnings("ignore")
+
+#with warnings.catch_warnings():
+#        warnings.filterwarnings("ignore",category=all)
+#        import torch
+
+
+
 def main(config):
     logger = config.get_logger('train')
 

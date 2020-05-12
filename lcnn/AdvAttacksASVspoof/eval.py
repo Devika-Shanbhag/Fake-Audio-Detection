@@ -24,24 +24,24 @@ def main(config, resume, protocol_file, asv_score_file):
     logger = config.get_logger('evaluation')
 
     # setup data_loader instances
-    # data_loader = getattr(module_data, config['dev_data_loader']['type'])(
-    #     config['dev_data_loader']['args']['scp_file'],
-    #     config['dev_data_loader']['args']['data_dir'],
-    #     batch_size=32,
-    #     shuffle=False,
-    #     validation_split=0.0,
-    #     num_workers=2
-    # )
-
     data_loader = getattr(module_data, config['dev_data_loader']['type'])(
-        "./data_LA/trn_dev_eval_scps/ASVspoof2019_LA_LPS_uf_seg600_eval.scp",
-        config['dev_data_loader']['args']['data_dir'],
-        batch_size=32,
-        shuffle=False,
-        validation_split=0.0,
-        num_workers=2,
-        eval=True
-    )
+         config['dev_data_loader']['args']['scp_file'],
+         config['dev_data_loader']['args']['data_dir'],
+         batch_size=32,
+         shuffle=False,
+         validation_split=0.0,
+         num_workers=2
+     )
+
+    #data_loader = getattr(module_data, config['dev_data_loader']['type'])(
+    #    "/home/dlcmu09/Fake-Audio-Detection/LA_splits/ASVspoof2019.LA.cm.dev_split_LR.trl.txt",
+    #    config['dev_data_loader']['args']['data_dir'],
+    #    batch_size=32,
+    #    shuffle=False,
+    #    validation_split=0.0,
+    #    num_workers=2,
+    #   eval=True
+    #)
 
     # build model architecture
     model = config.initialize('arch', module_arch)
@@ -91,6 +91,8 @@ def main(config, resume, protocol_file, asv_score_file):
 
 
     n_samples = len(data_loader.sampler)
+    print(n_samples)
+    print("utt2scores", utt2scores)
     # log = {'loss': total_loss / n_samples}
     log = { }
     log.update({
@@ -106,6 +108,7 @@ def main(config, resume, protocol_file, asv_score_file):
     cm_score_file = Path(resume).parent / 'cm_score_eval_allSys.txt'
     with open(cm_score_file, 'w') as f:
         for line in protocol_file_lines:
+            #print(line)
             utt_id = line[1]
             label = line[-1]
             sco = utt2scores[utt_id]
@@ -114,8 +117,9 @@ def main(config, resume, protocol_file, asv_score_file):
             # avg_score  = reduce(lambda x, y: x + y, score_list) / len(score_list)
             # f.write(utt_id+" "+"-"+" "+label+" "+str(avg_score)+"\n")           
     tdcf, eer = evaluate_tdcf_eer(cm_score_file, asv_score_file, print_cost=True)
-    _, eer_point = evaluate_eer(cm_score_file)
-    logger.info({"min-tDCF": tdcf, "EER": eer, "EER_point": eer_point})
+    eer, eer_point = evaluate_eer(cm_score_file)
+    logger.info({"min-tDCF": 0, "EER": eer, "EER_point": eer_point})
+    
 
 
 if __name__ == '__main__':
